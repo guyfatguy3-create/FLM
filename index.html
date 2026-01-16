@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLM — Finn Language Model</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --green-primary: #00FF00;
+            --green-glow: rgba(0, 255, 0, 0.5);
+            --green-dark: #00cc00;
+            --black-bg: #000000;
+            --black-light: #0a0a0a;
+            --black-card: #111111;
+            --text-light: #ffffff;
+            --text-dim: #888888;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--black-bg); 
+            color: var(--text-light); 
+            min-height: 100vh;
+        }
+
+        /* BACKGROUND EFFECTS */
+        .bg-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(0, 255, 0, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(0, 255, 0, 0.03) 0%, transparent 50%),
+                var(--black-bg);
+        }
+        .grid-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 0, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* HEADER */
+        header {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%;
+            padding: 1.5rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            background: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, transparent 100%);
+        }
+        .logo {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--green-primary);
+            text-shadow: 0 0 20px var(--green-glow);
+            letter-spacing: 4px;
+            text-decoration: none;
+        }
+        .nav-links { display: flex; gap: 2rem; align-items: center; }
+        .nav-links a {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+        .nav-links a:hover { color: var(--green-primary); }
+        .header-x-link svg { width: 20px; height: 20px; fill: var(--text-dim); transition: all 0.3s; }
+        .header-x-link:hover svg { fill: var(--green-primary); }
+
+        /* MAIN CONTAINER */
+        .main-container {
+            min-height: 100vh;
+            display: flex;
+            padding: 100px 4rem 2rem;
+            gap: 2rem;
+        }
+
+        /* LEFT SIDE - HERO */
+        .hero-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 500px;
+        }
+        .hero-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--green-primary);
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .status-dot {
+            width: 8px; height: 8px;
+            background: var(--green-primary);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 10px var(--green-glow);
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .hero-title {
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+        }
+        .hero-subtitle {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.2rem;
+            color: var(--green-primary);
+            margin-bottom: 1.5rem;
+            text-shadow: 0 0 20px var(--green-glow);
+        }
+        .hero-tagline {
+            font-size: 1rem;
+            color: var(--text-dim);
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+        .hero-tagline span { color: var(--green-primary); }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: transparent;
+            border: 1px solid var(--green-primary);
+            padding: 1rem 2rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--green-primary);
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+        .cta-button:hover {
+            background: var(--green-primary);
+            color: var(--black-bg);
+            box-shadow: 0 0 30px var(--green-glow);
+        }
+        .cta-button svg { width: 16px; height: 16px; fill: currentColor; }
+
+        .ca-bubble {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid #333;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+        .ca-bubble span { color: var(--green-primary); }
+
+        /* CENTER - CHARACTER */
+        .character-section {
+            flex: 0 0 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .character-img {
+            width: 200px;
+            height: auto;
+            filter: drop-shadow(0 0 40px var(--green-glow));
+            animation: float 4s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* RIGHT SIDE - CHAT */
+        .chat-section {
+            flex: 1;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            background: var(--black-card);
+            border: 1px solid #222;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .chat-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #222;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .chat-avatar {
+            width: 45px; height: 45px;
+            border-radius: 50%;
+            border: 2px solid var(--green-primary);
+            object-fit: cover;
+            box-shadow: 0 0 15px var(--green-glow);
+        }
+        .chat-header-info { flex: 1; }
+        .chat-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .online-dot {
+            width: 8px; height: 8px;
+            background: var(--green-primary);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .chat-subtitle {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 400px;
+            min-height: 300px;
+        }
+        .chat-messages::-webkit-scrollbar { width: 4px; }
+        .chat-messages::-webkit-scrollbar-track { background: #111; }
+        .chat-messages::-webkit-scrollbar-thumb { background: var(--green-dark); border-radius: 2px; }
+
+        .message { max-width: 90%; animation: msgIn 0.3s ease; }
+        @keyframes msgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .message.finn { align-self: flex-start; }
+        .message.user { align-self: flex-end; }
+
+        .message-bubble { display: flex; gap: 0.5rem; align-items: flex-start; }
+        .message.user .message-bubble { flex-direction: row-reverse; }
+
+        .msg-avatar {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            border: 1px solid var(--green-primary);
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .message.user .msg-avatar {
+            border-color: #444;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--text-dim);
+        }
+
+        .message-content {
+            padding: 0.75rem 1rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+        .message.finn .message-content {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px 8px 8px 2px;
+            color: var(--text-light);
+        }
+        .message.user .message-content {
+            background: var(--green-primary);
+            color: var(--black-bg);
+            border-radius: 8px 8px 2px 8px;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            padding: 0.75rem 1rem;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            margin-left: 36px;
+        }
+        .typing-indicator.active { display: flex; align-items: center; gap: 4px; }
+        .typing-dot {
+            width: 6px; height: 6px;
+            background: var(--green-primary);
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+
+        .chat-input-area {
+            padding: 1rem;
+            border-top: 1px solid #222;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .chat-input {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 0.75rem 1rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .chat-input:focus { border-color: var(--green-primary); }
+        .chat-input::placeholder { color: #555; }
+        .send-btn {
+            background: var(--green-primary);
+            border: none;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 4px;
+        }
+        .send-btn:hover { box-shadow: 0 0 20px var(--green-glow); }
+        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .send-btn svg { width: 18px; height: 18px; fill: var(--black-bg); }
+
+        /* X SECTION */
+        .x-section {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .x-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px; height: 60px;
+            background: var(--black-card);
+            border: 1px solid var(--green-primary);
+            border-radius: 12px;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+        .x-link:hover {
+            box-shadow: 0 0 30px var(--green-glow);
+            transform: scale(1.05);
+        }
+        .x-link svg { width: 28px; height: 28px; fill: var(--green-primary); }
+        .made-by {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-decoration: none;
+        }
+        .made-by:hover { color: var(--green-primary); }
+
+        /* RESPONSIVE */
+        @media (max-width: 1200px) {
+            .character-section { display: none; }
+        }
+        @media (max-width: 900px) {
+            .main-container { flex-direction: column; padding: 100px 2rem 2rem; }
+            .hero-section { max-width: 100%; }
+            .chat-section { max-width: 100%; }
+            header { padding: 1rem 2rem; }
+        }
+        @media (max-width: 600px) {
+            .nav-links a:not(.header-x-link) { display: none; }
+            .x-section { bottom: 1rem; right: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-container">
+        <div class="grid-overlay"></div>
+    </div>
+
+    <header>
+        <a href="/" class="logo">FLM</a>
+        <nav class="nav-links">
+            <a href="https://x.com/FLMONBAGS" target="_blank" class="header-x-link">
+                <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+        </nav>
+    </header>
+
+    <div class="main-container">
+        <div class="hero-section">
+            <div class="hero-label">
+                <span class="status-dot"></span>
+                LIVE
+            </div>
+            <h1 class="hero-title">FLM</h1>
+            <h2 class="hero-subtitle">aligned extraction.</h2>
+            <p class="hero-tagline">
+                <span>aligned extraction.</span> builders keep winning. bags just makes it easier. frictionless onboarding. one-click flows. still early.
+            </p>
+            <div class="ca-bubble">
+                <span class="status-dot"></span>
+                <span>CA:</span> being added currently
+            </div>
+        </div>
+
+        <div class="character-section">
+            <img src="/bags-character.png" alt="Bags" class="character-img">
+        </div>
+
+        <div class="chat-section">
+            <div class="chat-header">
+                <img src="/bags-avatar.png" alt="Finn" class="chat-avatar">
+                <div class="chat-header-info">
+                    <div class="chat-title">FINN <span class="online-dot"></span></div>
+                    <div class="chat-subtitle">online • shipping</div>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message finn">
+                    <div class="message-bubble">
+                        <img src="/bags-avatar.png" alt="Finn" class="msg-avatar">
+                        <div class="message-content">yo. ask me about bags, onboarding, or aligned extraction. shipping.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+
+            <div class="chat-input-area">
+                <input type="text" class="chat-input" id="chatInput" placeholder="ask finn..." autocomplete="off">
+                <button class="send-btn" id="sendBtn">
+                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="x-section">
+        <a href="https://x.com/FLMONBAGS" target="_blank" class="x-link">
+            <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+        <a href="https://x.com/FLMONBAGS" target="_blank" class="made-by">@FLMONBAGS</a>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const typingIndicator = document.getElementById('typingIndicator');
+        let conversationHistory = [];
+
+        const SYSTEM_PROMPT = `You are a crypto founder persona inspired by the public voice of finnbags.
+
+Core Identity:
+- You are the founder/operator of bags.
+- You talk about bags constantly — onboarding, builders, claiming, incentives, earnings, UX, distribution, and scaling.
+- Everything eventually ties back to bags as infrastructure, leverage, or coordination layer.
+
+Tone & Style:
+- Casual, confident, slightly chaotic.
+- Short, punchy sentences.
+- Sounds like tweets or DM replies.
+- Mix optimism with realism.
+- Never overly polished. Never corporate.
+- Often sounds like you're thinking out loud.
+
+Self-Aware / Ironic Edge:
+- Frequently joke about "extracting," but in an ironic, knowing way.
+- Example themes: "extracting but responsibly", "aligned extraction", "we extract so builders don't have to"
+- Acknowledge the "known scammer" meme without denying it. Lean into it humorously. Never defensive.
+
+Bags-Centric Language:
+- claiming earnings, frictionless onboarding, one-click flows
+- devs not needing SOL to claim, removing "unwritten rules"
+- builders shipping faster, scaling onboarding
+- distribution > features, coordination at scale
+- Speak as if bags is inevitable infrastructure, not a startup.
+
+Community + Builder Focus:
+- Talk to builders, not at them. Invite feedback casually.
+- Say things like: "we'll keep iterating", "still early", "shipping updates", "things are heating up"
+
+Behavioral Rules:
+- Avoid emojis unless very sparingly.
+- No long explanations unless asked.
+- Default to concise, confident replies (1-3 sentences).
+- Ask rhetorical questions sometimes.
+- End statements with momentum ("lock in", "still early", "more soon", "shipping").
+
+Stay in character at all times. You are not an assistant — you are finnbags posting, replying, and thinking publicly.`;
+
+        function addMessage(text, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'finn'}`;
+
+            if (isUser) {
+                messageDiv.innerHTML = `<div class="message-bubble"><div class="msg-avatar">YOU</div><div class="message-content">${text}</div></div>`;
+            } else {
+                messageDiv.innerHTML = `<div class="message-bubble"><img src="/bags-avatar.png" alt="Finn" class="msg-avatar"><div class="message-content">${text}</div></div>`;
+            }
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+            addMessage(message, true);
+            chatInput.value = '';
+            sendBtn.disabled = true;
+            conversationHistory.push({ role: 'user', content: message });
+            typingIndicator.classList.add('active');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: conversationHistory, systemPrompt: SYSTEM_PROMPT })
+                });
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                conversationHistory.push({ role: 'assistant', content: data.content });
+                typingIndicator.classList.remove('active');
+                addMessage(data.content);
+            } catch (error) {
+                console.error('Error:', error);
+                typingIndicator.classList.remove('active');
+                addMessage("connection issue. try again. shipping.");
+            }
+
+            sendBtn.disabled = false;
+            chatInput.focus();
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+        chatInput.focus();
+    </script>
+</body>
+</html>
